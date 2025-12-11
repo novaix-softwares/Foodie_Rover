@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Foodie Rover - Login System</title>
+  <style>
+    body {
+  font-family: Poppins, sans-serif;
+  background: #fafafa;
+  text-align: center;
+  margin: 0;
+  padding: 50px;
+}
+
+/* Overlay Popup */
+.overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.popup {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  width: 350px;
+}
+
+.form {
+  display: none;
+}
+.overlay:not(.signup-mode) .login-form {
+  display: block;
+}
+.overlay.signup-mode .signup-form {
+  display: block;
+}
+
+/* Buttons */
+.btn {
+  padding: 10px 20px;
+  background: #a12727;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+}
+.btn:hover {
+  background: #c93939;
+}
+
+/* Profile Circle */
+.profile-circle {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: #a12727;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 600;
+  cursor: pointer;
+  position: fixed;
+  top: 20px;
+  right: 30px;
+  overflow: hidden;
+  object-fit: cover;
+}
+
+/* Profile Slider */
+.profile-slider {
+  position: fixed;
+  top: 0;
+  right: -300px;
+  width: 280px;
+  height: 100%;
+  background: #fff;
+  box-shadow: -4px 0 10px rgba(0,0,0,0.2);
+  transition: right 0.4s;
+  z-index: 9999;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.profile-slider.open {
+  right: 0;
+}
+.profile-pic {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #eee;
+  margin: 0 auto 10px;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+}
+.profile-content button {
+  margin: 8px 0;
+  padding: 10px;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #f2f2f2;
+  transition: 0.3s;
+}
+.profile-content button:hover {
+  background: #ddd;
+}
+footer {
+  font-size: 12px;
+  color: gray;
+}
+
+/* Popups */
+.popup-message {
+  display: none;
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 15px 30px;
+  border-radius: 10px;
+  font-weight: 600;
+  color: #fff;
+  z-index: 99999;
+}
+.popup-message.success {
+  background: #2ecc71;
+}
+.popup-message.error {
+  background: #e74c3c;
+}
+  </style>
+</head>
+<body>
+  <!-- LOGIN / SIGNUP POPUP -->
+  <div class="overlay" id="loginPopupOverlay">
+    <div class="popup">
+      <!-- Login Form -->
+      <div class="form login-form">
+        <h2>Foodie Rover</h2>
+        <h3>Login</h3>
+        <input type="email" placeholder="Email" id="loginEmail" required />
+        <input type="password" placeholder="Password" id="loginPassword" required />
+        <a href="#" class="forgot">Forgot password?</a>
+        <button id="loginSubmit">Login</button>
+        <p>Don't have an account? <a href="#" onclick="showSignUp()">Sign up</a></p>
+      </div>
+
+      <!-- Signup Form -->
+      <div class="form signup-form">
+        <h2>Foodie Rover</h2>
+        <h3>Sign Up</h3>
+        <input type="text" id="signupName" placeholder="Full Name" required />
+        <input type="email" id="signupEmail" placeholder="Email" required />
+        <input type="password" id="signupPassword" placeholder="Password" required />
+        <input type="password" id="signupConfirm" placeholder="Confirm Password" required />
+        <label class="upload-label">Upload Profile Image (optional)</label>
+        <input type="file" id="signupImage" accept="image/*" />
+        <button id="createAccount">Create Account</button>
+        <p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUPS -->
+  <div class="popup-message success" id="successPopup">✅ Login Successful!</div>
+  <div class="popup-message error" id="loginFailedPopup">❌ Login Failed! Invalid Email or Password.</div>
+
+  <!-- HEADER BUTTONS -->
+  <button id="openLoginPopup" class="btn loginBtn">Login</button>
+  <div id="profileCircle" class="profile-circle" style="display: none;"></div>
+
+  <!-- PROFILE SLIDER -->
+  <div id="profileSlider" class="profile-slider">
+    <div class="profile-header">
+      <div id="profileImagePreview" class="profile-pic"></div>
+      <h3 id="profileName"></h3>
+    </div>
+    <div class="profile-content">
+      <p>❤️ Liked Recipes</p>
+      <p>📁 Saved Recipes</p>
+      <button id="changePasswordBtn">Change Password</button>
+      <button id="changeLangBtn">Change Language</button>
+      <button id="logoutBtn">Logout</button>
+    </div>
+    <footer>© 2025 Foodie Rover</footer>
+  </div>
+
+  <script>
+    function showSignUp() {
+  document.getElementById("loginPopupOverlay").classList.add("signup-mode");
+}
+function showLogin() {
+  document.getElementById("loginPopupOverlay").classList.remove("signup-mode");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const loginPopup = document.getElementById("loginPopupOverlay");
+  const openBtn = document.getElementById("openLoginPopup");
+  const loginBtn = document.getElementById("loginSubmit");
+  const createBtn = document.getElementById("createAccount");
+  const profileCircle = document.getElementById("profileCircle");
+  const slider = document.getElementById("profileSlider");
+
+  // Open login popup
+  openBtn.addEventListener("click", () => (loginPopup.style.display = "flex"));
+
+  // Close popup on background click
+  loginPopup.addEventListener("click", (e) => {
+    if (e.target.id === "loginPopupOverlay") loginPopup.style.display = "none";
+  });
+
+  // Signup (Create Account)
+  createBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    const name = document.getElementById("signupName").value.trim();
+    const email = document.getElementById("signupEmail").value.trim();
+    const pass = document.getElementById("signupPassword").value;
+    const confirm = document.getElementById("signupConfirm").value;
+    const imgFile = document.getElementById("signupImage").files[0];
+
+    if (!name || !email || !pass || pass !== confirm) {
+      alert("Please fill form correctly!");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = function () {
+      const userData = {
+        name,
+        email,
+        password: pass,
+        image: imgFile ? reader.result : null,
+      };
+      localStorage.setItem("userData", JSON.stringify(userData));
+      alert("Account created successfully!");
+      showLogin();
+    };
+    if (imgFile) reader.readAsDataURL(imgFile);
+    else reader.onloadend();
+  });
+
+  // LOGIN
+  loginBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    const email = document.getElementById("loginEmail").value.trim();
+    const pass = document.getElementById("loginPassword").value;
+    const user = JSON.parse(localStorage.getItem("userData"));
+
+    if (user && user.email === email && user.password === pass) {
+      localStorage.setItem("isLoggedIn", "true");
+      showSuccessPopup();
+      showProfileCircle(user);
+    } else {
+      showLoginFailedPopup();
+    }
+  });
+
+  // Show profile circle if already logged in
+  if (localStorage.getItem("isLoggedIn") === "true") {
+    const user = JSON.parse(localStorage.getItem("userData"));
+    showProfileCircle(user);
+  }
+
+  // ✅ Profile circle click → open/close slider
+  profileCircle.addEventListener("click", (e) => {
+    e.stopPropagation(); // Stop event from bubbling up
+    slider.classList.toggle("open");
+
+    const user = JSON.parse(localStorage.getItem("userData"));
+    document.getElementById("profileName").textContent = user.name;
+    if (user.image)
+      document.getElementById("profileImagePreview").style.backgroundImage = `url(${user.image})`;
+  });
+
+  // ✅ Click outside slider → close slider
+  document.addEventListener("click", (e) => {
+    if (
+      slider.classList.contains("open") &&
+      !slider.contains(e.target) &&
+      !profileCircle.contains(e.target)
+    ) {
+      slider.classList.remove("open");
+    }
+  });
+
+  // Change Password
+  document.getElementById("changePasswordBtn").addEventListener("click", () => {
+    const newPass = prompt("Enter your new password:");
+    if (newPass) {
+      const user = JSON.parse(localStorage.getItem("userData"));
+      user.password = newPass;
+      localStorage.setItem("userData", JSON.stringify(user));
+      alert("Password changed successfully!");
+    }
+  });
+
+  // Logout
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    localStorage.removeItem("isLoggedIn");
+    slider.classList.remove("open");
+    profileCircle.style.display = "none";
+    openBtn.style.display = "inline-block";
+    alert("Logged out successfully!");
+  });
+});
+
+// POPUPS
+function showSuccessPopup() {
+  const popup = document.getElementById("successPopup");
+  popup.style.display = "block";
+  setTimeout(() => (popup.style.display = "none"), 2000);
+  document.getElementById("loginPopupOverlay").style.display = "none";
+}
+function showLoginFailedPopup() {
+  const popup = document.getElementById("loginFailedPopup");
+  popup.style.display = "block";
+  setTimeout(() => (popup.style.display = "none"), 2000);
+}
+function showProfileCircle(user) {
+  const profileCircle = document.getElementById("profileCircle");
+  const openLoginPopup = document.getElementById("openLoginPopup");
+  openLoginPopup.style.display = "none";
+  profileCircle.style.display = "flex";
+
+  if (user.image) {
+    profileCircle.innerHTML = `<img src="${user.image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  } else {
+    profileCircle.textContent = user.name.charAt(0).toUpperCase();
+  }
+}
+  </script>
+</body>
+</html>
